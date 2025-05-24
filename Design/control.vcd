@@ -1,0 +1,144 @@
+$date
+	Fri May 23 18:21:38 2025
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1ps
+$end
+$scope module fsm_control_tb $end
+$var wire 2 ! status_tb [1:0] $end
+$var reg 1 " BR_tb $end
+$var reg 1 # BW_tb $end
+$var reg 1 $ PR_tb $end
+$var reg 1 % PW_tb $end
+$var reg 1 & S_tb $end
+$var reg 1 ' clk_tb $end
+$var reg 1 ( rst_tb $end
+$scope module dut $end
+$var wire 1 " BR $end
+$var wire 1 # BW $end
+$var wire 1 $ PR $end
+$var wire 1 % PW $end
+$var wire 1 & S $end
+$var wire 1 ' clk $end
+$var wire 1 ( rst $end
+$var parameter 2 ) EXCLUSIVE $end
+$var parameter 2 * INVALID $end
+$var parameter 2 + MODIFIED $end
+$var parameter 2 , SHARED $end
+$var reg 2 - c_state [1:0] $end
+$var reg 2 . n_state [1:0] $end
+$var reg 2 / status [1:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b10 ,
+b0 +
+b11 *
+b1 )
+$end
+#0
+$dumpvars
+b11 /
+bx .
+bx -
+1(
+0'
+0&
+0%
+0$
+0#
+0"
+b11 !
+$end
+#5
+b11 .
+b11 -
+1'
+#10
+0'
+1#
+0(
+#15
+1'
+#20
+0'
+#25
+1'
+#30
+b0 .
+0'
+1%
+0#
+#35
+b0 !
+b0 /
+b0 -
+1'
+#40
+0'
+#45
+1'
+#50
+b10 .
+0'
+0%
+1"
+#55
+b10 !
+b10 /
+b10 -
+1'
+#60
+0'
+#65
+1'
+#70
+0'
+1&
+1$
+0"
+#75
+1'
+#80
+0'
+#85
+1'
+#90
+0'
+#95
+1'
+#100
+0'
+#105
+1'
+#110
+0'
+#115
+1'
+#120
+0'
+#125
+1'
+#130
+0'
+#135
+1'
+#140
+0'
+#145
+1'
+#150
+0'
+#155
+1'
+#160
+0'
+#165
+1'
+#170
+0'

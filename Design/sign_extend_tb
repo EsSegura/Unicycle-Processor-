@@ -1,0 +1,55 @@
+#! /c/Source/iverilog-install/bin/vvp
+:ivl_version "12.0 (devel)" "(s20150603-1539-g2693dd32b)";
+:ivl_delay_selection "TYPICAL";
+:vpi_time_precision - 12;
+:vpi_module "D:\iverilog\lib\ivl\system.vpi";
+:vpi_module "D:\iverilog\lib\ivl\vhdl_sys.vpi";
+:vpi_module "D:\iverilog\lib\ivl\vhdl_textio.vpi";
+:vpi_module "D:\iverilog\lib\ivl\v2005_math.vpi";
+:vpi_module "D:\iverilog\lib\ivl\va_math.vpi";
+:vpi_module "D:\iverilog\lib\ivl\v2009.vpi";
+S_000002b568bcbd50 .scope package, "$unit" "$unit" 2 1;
+ .timescale 0 0;
+S_000002b568c04630 .scope module, "tb_sign_extend" "tb_sign_extend" 3 3;
+ .timescale -9 -12;
+v000002b568c056d0_0 .var/s "tb_imm_in", 11 0;
+v000002b568c13f80_0 .net/s "tb_imm_out", 31 0, L_000002b568c14020;  1 drivers
+S_000002b568c047c0 .scope module, "dut" "sign_extend" 3 10, 4 1 0, S_000002b568c04630;
+ .timescale 0 0;
+    .port_info 0 /INPUT 12 "imm_in";
+    .port_info 1 /OUTPUT 32 "imm_out";
+P_000002b568bcbee0 .param/l "IN_WIDTH" 0 4 2, +C4<00000000000000000000000000001100>;
+P_000002b568bcbf18 .param/l "OUT_WIDTH" 0 4 3, +C4<00000000000000000000000000100000>;
+v000002b568bc6ee0_0 .net/s "imm_in", 11 0, v000002b568c056d0_0;  1 drivers
+v000002b568bc7030_0 .net/s "imm_out", 31 0, L_000002b568c14020;  alias, 1 drivers
+L_000002b568c14020 .extend/s 32, v000002b568c056d0_0;
+    .scope S_000002b568c04630;
+T_0 ;
+    %vpi_call/w 3 16 "$display", "Time |     imm_in (12-bit)     |       imm_out (32-bit)" {0 0 0};
+    %vpi_call/w 3 17 "$display", "--------------------------------------------------------" {0 0 0};
+    %pushi/vec4 25, 0, 12;
+    %store/vec4 v000002b568c056d0_0, 0, 12;
+    %delay 1000, 0;
+    %vpi_call/w 3 21 "$display", "%4t | %b (%0d) | %b (%0d)", $time, v000002b568c056d0_0, v000002b568c056d0_0, v000002b568c13f80_0, v000002b568c13f80_0 {0 0 0};
+    %pushi/vec4 4083, 0, 12;
+    %store/vec4 v000002b568c056d0_0, 0, 12;
+    %delay 1000, 0;
+    %vpi_call/w 3 25 "$display", "%4t | %b (%0d) | %b (%0d)", $time, v000002b568c056d0_0, v000002b568c056d0_0, v000002b568c13f80_0, v000002b568c13f80_0 {0 0 0};
+    %pushi/vec4 2047, 0, 12;
+    %store/vec4 v000002b568c056d0_0, 0, 12;
+    %delay 1000, 0;
+    %vpi_call/w 3 29 "$display", "%4t | %b (%0d) | %b (%0d)", $time, v000002b568c056d0_0, v000002b568c056d0_0, v000002b568c13f80_0, v000002b568c13f80_0 {0 0 0};
+    %pushi/vec4 2048, 0, 12;
+    %store/vec4 v000002b568c056d0_0, 0, 12;
+    %delay 1000, 0;
+    %vpi_call/w 3 33 "$display", "%4t | %b (%0d) | %b (%0d)", $time, v000002b568c056d0_0, v000002b568c056d0_0, v000002b568c13f80_0, v000002b568c13f80_0 {0 0 0};
+    %vpi_call/w 3 36 "$finish" {0 0 0};
+    %end;
+    .thread T_0;
+# The file index is used to find the file name in the following table.
+:file_names 5;
+    "N/A";
+    "<interactive>";
+    "-";
+    "sign_extend_tb.sv";
+    "sign_extend.sv";

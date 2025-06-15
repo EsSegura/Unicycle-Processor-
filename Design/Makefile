@@ -5,9 +5,9 @@ VLOG = iverilog
 VVP  = vvp
 
 # Files
-SRC = sign_extend.sv
-TB  = sign_extend_tb.sv
-OUT = sign_extend_tb
+SRC = alu.sv
+TB  = alu_tb.sv
+OUT = alu_tb
 
 # Default target
 all: run

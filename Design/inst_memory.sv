@@ -11,13 +11,17 @@ module inst_mem #(parameter WIDTH=32, parameter DEPTH=16) (
 
 );
   
-  logic [WIDTH-1:0] memory [2^^DEPTH];
+  logic [WIDTH-1:0] memory [0:(1 << DEPTH)-1];
   
   initial $readmemh("program.mem", memory);
   
   always_ff @(posedge clk) begin
-    if (wr) memory[addr] <= data_in;
-    if (rd) data_out <= memory[addr];
+    if (wr) begin
+    memory[addr] <= data_in; //Si wr es 1, se escribe data_in en la dirección addr de memoria
+    end
+    if (rd) begin
+    data_out <= memory[addr]; //Si rd es 1, se lee la dirección addr de memoria y se asigna a data_out
+    end
   end
   
 endmodule

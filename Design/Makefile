@@ -5,9 +5,9 @@ VLOG = iverilog
 VVP  = vvp
 
 # Files
-SRC = alu.sv
-TB  = alu_tb.sv
-OUT = alu_tb
+SRC = imm_gen.sv
+TB  = imm_gen_tb.sv
+OUT = imm_gen_tb
 
 # Default target
 all: run

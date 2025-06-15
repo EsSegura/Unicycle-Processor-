@@ -1,90 +1,102 @@
 module alu #(parameter WIDTH=32)(
-    input logic [WIDTH-1:0] data_in_1,
-    input logic [WIDTH-1:0] data_in_2,
+    input logic [WIDTH-1:0] rs1,
+    input logic [WIDTH-1:0] rs2_or_imm,
+    input logic [WIDTH-1:0] pc,
     input logic [2:0] func3,
     input logic [6:0] func7,
     input logic [6:0] opcode,
 
-    output logic [WIDTH-1:0] data_out,
+    output logic [WIDTH-1:0] alu_result,
+    output logic [WIDTH-1:0] pc_plus_4,
+    output logic [WIDTH-1:0] jump_target,
     output logic zero,
-    output logic comparision
+    output logic branch_taken
 );
 
-    parameter ALI_OP = 0010011,
-    parameter AL_OP = 0110011,
-    parameter MEM_WR_OP = 0100011,
-    parameter MEM_RD_OP = 0000011,
-    parameter BR_OP = 1100011,
-    parameter JALR = 1100111,
-    parameter LUI = 0110111,
+    // Opcodes (RV32I)
+    localparam ALI_OP    = 7'b0010011;
+    localparam AL_OP     = 7'b0110011;
+    localparam MEM_WR_OP = 7'b0100011;
+    localparam MEM_RD_OP = 7'b0000011;
+    localparam BR_OP     = 7'b1100011;
+    localparam JALR      = 7'b1100111;
+    localparam LUI       = 7'b0110111;
 
-    always_comb begin 
-        case(opcode)
-            ALI_OP: begin 
+    always_comb begin
+        // Default values
+        alu_result = '0;
+        pc_plus_4 = pc + 4;
+        jump_target = '0;
+        branch_taken = 1'b0;
+
+        case (opcode)
+            ALI_OP: begin  // ALU Immediate operations
                 case (func3)
-                000: data_out = signed(data_in_1) + signed(data_in_2); //addi
-                001: data_out = data_in_1 << data_in_2; //slli
-                010: data_out = (signed(data_in_1) < signed(data_in_2)) ? 1 : 0; //slti
-                011: data_out = (unsigned(data_in_1) < unsigned(data_in_2)) ? 1 : 0; //sltiu
-                100: data_out = data_in_1 ^ data_in_2; //xori
-                101: begin
-                if(funct7 == 0000000) 
-                    data_out = data_in_1 >> data_in_2; //srli
-                if(funct7 == 0100000) 
-                    data_out = signed(data_in_1) >>> data_in_2; //srai
-                end
-                110: data_out = data_in_1 | data_in_2; //ori
-                111: data_out = data_in_1 & data_in_2; //andi
+                    3'b000: alu_result = $signed(rs1) + $signed(rs2_or_imm);  // ADDI
+                    3'b001: alu_result = rs1 << rs2_or_imm[4:0];               // SLLI
+                    3'b010: alu_result = ($signed(rs1) < $signed(rs2_or_imm)); // SLTI
+                    3'b011: alu_result = (rs1 < rs2_or_imm);                   // SLTIU
+                    3'b100: alu_result = rs1 ^ rs2_or_imm;                     // XORI
+                    3'b101: begin
+                        if (func7[5])  // SRAI
+                            alu_result = $signed(rs1) >>> rs2_or_imm[4:0];
+                        else           // SRLI
+                            alu_result = rs1 >> rs2_or_imm[4:0];
+                    end
+                    3'b110: alu_result = rs1 | rs2_or_imm;                     // ORI
+                    3'b111: alu_result = rs1 & rs2_or_imm;                     // ANDI
                 endcase
             end
-            AL_OP: begin
-                case(func3)
-                000: begin
-                    if(funct7 == 0000000) 
-                        data_out = signed(data_in_1) + signed(data_in_2); //add
-                    if(funct7 == 0100000) 
-                        data_out = signed(data_in_1) - signed(data_in_2); //sub
-                end
-                001: data_out = data_in_1 << data_in_2; //sll
-                010: data_out = (signed(data_in_1) < signed(data_in_2)) ? 1 : 0; //slt
-                011: data_out = (unsigned(data_in_1) < unsigned(data_in_2)) ? 1 : 0; //sltu
-                100: data_out = data_in_1 ^ data_in_2; //xor
-                101: begin
-                    if(funct7 == 0000000) 
-                        data_out = data_in_1 >> data_in_2; //srl
-                    if(funct7 == 0100000) 
-                        data_out = signed(data_in_1) >>> data_in_2; //sra
-                end
-                110: data_out = data_in_1 | data_in_2; //or
-                111: data_out = data_in_1 & data_in_2; //and
+
+            AL_OP: begin  // Register-Register operations
+                case (func3)
+                    3'b000: begin
+                        if (func7[5])  // SUB
+                            alu_result = $signed(rs1) - $signed(rs2_or_imm);
+                        else           // ADD
+                            alu_result = $signed(rs1) + $signed(rs2_or_imm);
+                    end
+                    3'b001: alu_result = rs1 << rs2_or_imm[4:0];               // SLL
+                    3'b010: alu_result = ($signed(rs1) < $signed(rs2_or_imm)); // SLT
+                    3'b011: alu_result = (rs1 < rs2_or_imm);                   // SLTU
+                    3'b100: alu_result = rs1 ^ rs2_or_imm;                     // XOR
+                    3'b101: begin
+                        if (func7[5])  // SRA
+                            alu_result = $signed(rs1) >>> rs2_or_imm[4:0];
+                        else           // SRL
+                            alu_result = rs1 >> rs2_or_imm[4:0];
+                    end
+                    3'b110: alu_result = rs1 | rs2_or_imm;                     // OR
+                    3'b111: alu_result = rs1 & rs2_or_imm;                     // AND
                 endcase
             end
-            MEM_WR_OP: begin
-                data_out = signed(data_in_1) + signed(data_in_2); //addr for sb, sh, sw
+
+            MEM_WR_OP, MEM_RD_OP: begin  // Memory operations
+                alu_result = $signed(rs1) + $signed(rs2_or_imm);
             end
-            MEM_RD_OP: begin
-                data_out = signed(data_in_1) + signed(data_in_2); //addr for lb, lh, lw, lbu, lhu
-            end
-            BR_OP: begin
-                case(func3)
-                000: comparison = (signed(data_in_1) == signed(data_in_2)) ? 1 : 0; //beq
-                001: comparison = (signed(data_in_1) == signed(data_in_2)) ? 0 : 1; //bne
-                100: comparison = (signed(data_in_1) <  signed(data_in_2)) ? 1 : 0; //blt
-                101: comparison = (signed(data_in_1) >= signed(data_in_2)) ? 1 : 0; //bge
-                110: comparison = (unsigned(data_in_1) <  unsigned(data_in_2)) ? 1 : 0; //bltu
-                111: comparison = (unsigned(data_in_1) >= unsigned(data_in_2)) ? 1 : 0; //bgeu
+
+            BR_OP: begin  // Branch operations
+                jump_target = pc + $signed(rs2_or_imm);
+                case (func3)
+                    3'b000: branch_taken = (rs1 == rs2_or_imm);                // BEQ
+                    3'b001: branch_taken = (rs1 != rs2_or_imm);                // BNE
+                    3'b100: branch_taken = ($signed(rs1) < $signed(rs2_or_imm)); // BLT
+                    3'b101: branch_taken = ($signed(rs1) >= $signed(rs2_or_imm)); // BGE
+                    3'b110: branch_taken = (rs1 < rs2_or_imm);                  // BLTU
+                    3'b111: branch_taken = (rs1 >= rs2_or_imm);                 // BGEU
                 endcase
             end
+
             JALR: begin
-                data_out = signed(data_in_1) + signed(data_in_2); //jalr
+                alu_result = pc + 4;
+                jump_target = ($signed(rs1) + $signed(rs2_or_imm)) & ~1;
             end
+
             LUI: begin
-                data_out = data_in_2; //lui
+                alu_result = rs2_or_imm;
             end
-                default: data_out = 0;
         endcase
     end
-    
-    assign zero = (data_out == 0) ? 1 : 0
 
+    assign zero = (alu_result == '0);
 endmodule

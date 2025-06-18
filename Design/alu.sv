@@ -88,7 +88,7 @@ module alu #(parameter WIDTH=32)(
             end
 
             JALR: begin
-                alu_result = pc + 4;
+                alu_result = pc + 4; 
                 jump_target = ($signed(rs1) + $signed(rs2)) & ~1;
             end
 

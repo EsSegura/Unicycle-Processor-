@@ -23,6 +23,11 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
     logic [WIDTH-1:0] alu_result;
     logic [WIDTH-1:0] data_mem_out;
     logic [WIDTH-1:0] reg_data_out;
+    logic [WIDTH-1:0] inst_out
+    wire [WIDTH-1:0] rs1_data;
+    wire [WIDTH-1:0] rs2_data;
+    wire [WIDTH-1:0] rs3_data; 
+    wire [WIDTH-1:0] write_data;
 
     // Control signals
     logic mux_pc_signal;
@@ -32,12 +37,15 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
     logic write_mem;
     logic read_mem;
     logic write_register;
+    logic zero:
+    logic branch_taken;
+    logic one_byte; two_byte; four_bytes;
 
     // Instantiate modules
     inst_mem #(WIDTH, DEPTH) inst_memory (
         .clk(clk),
         .rst(rst),
-        .addr(pc[DEPTH-1:2]),
+        .addr(pc_out),
         .data_in(0), // No need to write to instruction memory
         .wr(1'b0), // No write operation        
         .rd(1'b1),
@@ -48,25 +56,28 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
         .instr(instr),
         .data_out(imm_data)
     );
-//completar 
+
     alu #(WIDTH) alu_unit (
-        .rs1(),
-        .rs2(),
+        .rs1(rs1_data),
+        .rs2(rs2_data),
         .pc(pc),
-        .func3()
-        .func7(),
+        .func3(instr[14:12]),
+        .func7(instr[31:25]),
         .opcode(instr[6:0]),
         .alu_result(alu_result),
-        .pc_plus_4(),
-        .jump_target(),
-        .zero(),
-        .branch_taken()
+        .pc_plus_4(pc_plus_4),
+        .jump_target(rs3_data),
+        .zero(zero),
+        .branch_taken(branch_taken)
     );
 //revisar entradas
     data_memory #(WIDTH, DEPTH) data_memory_unit (
         .clk(clk),
         .rst(rst),
-        .data_in(),
+        .data_in(rs2_data),
+        .one_byte(one_byte),
+        .two_byte(two_byte),
+        .four_bytes(four_bytes),
         .addr(alu_result[DEPTH-1:2]),
         .wr(write_mem),
         .rd(read_mem),
@@ -74,8 +85,8 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
     );
 
     control_signal control_unit (
-        .opcode(instr[6:0]),
-        .comparison(alu_result[0]), // Example comparison signal
+        .instruction(instr[6:0]),
+        .comparison(branch_taken), // Example comparison signal
         .mux_pc_signal(mux_pc_signal),
         .mux_imm_signal(mux_imm_signal),
         .mux_writedata_register(mux_writedata_register),
@@ -88,7 +99,7 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
     register_file #(WIDTH) reg_file (
         .clk(clk),
         .rst(rst),
-        .write_data(),
+        .write_data(write_data),
         .write_register(instr[11:7]), // rd field
         .write(write_register),
         .read_register_1(instr[19:15]),
@@ -97,6 +108,7 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
         .read_data_1(rs1_data),
         .read_data_2(rs2_data)  
     );
+
     register #(WIDTH) pc_register (
         .clk(clk),
         .rst(rst),
@@ -104,26 +116,33 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
         .data_in(mux_pc_signal),
         .data_out(pc)
     );
-    //Mux del pc
+
+    mux_2_1 #(WIDTH) mux_jalr (
+        .A(pc_plus_imm), // Default to next instruction
+        .B(alu_result), // Jump targe
+        .sel(mux_jalr),
+        .out(inst_out) 
+    );
+
     mux_2_1 #(WIDTH) mux_pc (
         .A(pc_plus_4), // Default to next instruction
-        .B(pc_plus_imm), // Jump targe
-        .sel(),
+        .B(inst_out), // Jump targe
+        .sel(mux_pc_signal),
         .out(mux_pc)
     );
-    //Antes de la alu
+//este 
     mux_2_1 #(WIDTH) mux_prealu(
         .A(rs2_data), // Default to next instruction
         .B(imm_data), // Jump targe
-        .sel(),
-        .out(rs2)//entrada alu
+        .sel(mux_imm_signal),
+        .out(rs2_data)//entrada alu
     );
-    //Alu despues de la alu
+
     mux_2_1 #(WIDTH) mux_postalu(
         .A(read_data), // Default to next instruction
         .B(alu_result), // Jump targe
-        .sel(),
-        .out(mux_writedata_register)//entrada alu
+        .sel(mux_writedata_register),
+        .out(write_data)
     );
     //Despues del pc
     adder #(WIDTH) adder_unit_1 (
@@ -137,13 +156,6 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
         .B(imm_data),
         .sum(pc_plus_imm) // Jump target
     );
-    assign pc_out = pc;
-    always_ff @(posedge clk or posedge rst) begin
-        if (rst) begin
-            pc <= 0; // Reset PC to 0
-        end else begin
-            pc <= mux_pc_signal ? alu_result : (pc + 4); // Increment PC or jump
-        end
-    end 
+    
 endmodule
     

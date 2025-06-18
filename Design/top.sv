@@ -16,6 +16,8 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
 
     // Signals
     logic [WIDTH-1:0] pc;
+    logic [WIDTH-1:0] pc_plus_4;
+    logic [WIDTH-1:0] pc_plus_imm;
     logic [WIDTH-1:0] instr;
     logic [WIDTH-1:0] imm_data;
     logic [WIDTH-1:0] alu_result;
@@ -99,8 +101,41 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
         .clk(clk),
         .rst(rst),
         .write(1'b1), // Always write to PC
-        .data_in(mux_pc_signal ? alu_result : (pc + 4)),
+        .data_in(mux_pc_signal),
         .data_out(pc)
+    );
+    //Mux del pc
+    mux_2_1 #(WIDTH) mux_pc (
+        .A(pc_plus_4), // Default to next instruction
+        .B(pc_plus_imm), // Jump targe
+        .sel(),
+        .out(mux_pc)
+    );
+    //Antes de la alu
+    mux_2_1 #(WIDTH) mux_prealu(
+        .A(rs2_data), // Default to next instruction
+        .B(imm_data), // Jump targe
+        .sel(),
+        .out(rs2)//entrada alu
+    );
+    //Alu despues de la alu
+    mux_2_1 #(WIDTH) mux_postalu(
+        .A(read_data), // Default to next instruction
+        .B(alu_result), // Jump targe
+        .sel(),
+        .out(mux_writedata_register)//entrada alu
+    );
+    //Despues del pc
+    adder #(WIDTH) adder_unit_1 (
+        .A(32'd4),
+        .B(pc),
+        .sum(pc_plus_4)
+    );
+    //Despues del pc y adder
+    adder #(WIDTH) adder_unit_2 (
+        .A(pc_out),
+        .B(imm_data),
+        .sum(pc_plus_imm) // Jump target
     );
     assign pc_out = pc;
     always_ff @(posedge clk or posedge rst) begin

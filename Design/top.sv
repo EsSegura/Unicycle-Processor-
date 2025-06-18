@@ -36,6 +36,8 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
         .clk(clk),
         .rst(rst),
         .addr(pc[DEPTH-1:2]),
+        .data_in(0), // No need to write to instruction memory
+        .wr(1'b0), // No write operation        
         .rd(1'b1),
         .data_out(instr)
     );
@@ -44,18 +46,25 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
         .instr(instr),
         .data_out(imm_data)
     );
-
+//completar 
     alu #(WIDTH) alu_unit (
-        .a(reg_data_out),
-        .b(imm_data),
-        .alu_control(instr[14:12]),
-        .result(alu_result)
+        .rs1(),
+        .rs2(),
+        .pc(pc),
+        .func3()
+        .func7(),
+        .opcode(instr[6:0]),
+        .alu_result(alu_result),
+        .pc_plus_4(),
+        .jump_target(),
+        .zero(),
+        .branch_taken()
     );
-
+//revisar entradas
     data_memory #(WIDTH, DEPTH) data_memory_unit (
         .clk(clk),
         .rst(rst),
-        .data_in(reg_data_out),
+        .data_in(),
         .addr(alu_result[DEPTH-1:2]),
         .wr(write_mem),
         .rd(read_mem),
@@ -77,13 +86,14 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
     register_file #(WIDTH) reg_file (
         .clk(clk),
         .rst(rst),
+        .write_data(),
+        .write_register(instr[11:7]), // rd field
         .write(write_register),
-        .read_addr_a(instr[19:15]),
-        .read_addr_b(instr[24:20]),
-        .write_addr(instr[11:7]),
-        .write_data(mux_writedata_register ? data_mem_out : alu_result),
-        .read_data_a(reg_data_out), 
-        .read_data_b() // Not used in this example
+        .read_register_1(instr[19:15]),
+        .read_register_2(instr[24:20]),
+        .read(1'b1),    
+        .read_data_1(rs1_data),
+        .read_data_2(rs2_data)  
     );
     register #(WIDTH) pc_register (
         .clk(clk),

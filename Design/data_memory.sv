@@ -17,7 +17,7 @@ module data_mem #(parameter WIDTH=32, parameter DEPTH=20) (
   
   logic [7:0] memory [2^^DEPTH];
   
-  always_ff @(posedge clk) begin
+  always_ff @(negedge clk) begin
     if (rst) begin
       for(int i=1; i<2^^DEPTH;i++) begin
         memory[i] <= 0;

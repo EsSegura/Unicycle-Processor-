@@ -20,10 +20,11 @@ module alu #(parameter WIDTH=32)(
     localparam MEM_RD_OP = 7'b0000011;
     localparam BR_OP     = 7'b1100011;
     localparam JALR      = 7'b1100111;
+    localparam JAL       = 7'b1101111;
     localparam LUI       = 7'b0110111;
 
     always_comb begin
-
+        // Default values
         alu_result = '0;
         pc_plus_4 = pc + 4;
         jump_target = '0;
@@ -90,6 +91,9 @@ module alu #(parameter WIDTH=32)(
             JALR: begin
                 alu_result = pc + 4; 
                 jump_target = ($signed(rs1) + $signed(rs2)) & ~1;
+            end
+            JAL: begin
+                alu_result = pc + 4; 
             end
 
             LUI: begin

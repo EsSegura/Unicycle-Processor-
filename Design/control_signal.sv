@@ -8,6 +8,9 @@ module control_signal #(parameter WIDTH = 32)(
   output logic               mux_jalr, // Direccion de salto para PC: 0 = jal y branches, 1 = jalr
   output logic              write_mem, // Guardar memoria sw, sh, sb
   output logic               read_mem, // Leer memoria lw, lh, lb
+  output logic               one_byte, //sb o lb
+  output logic               two_bytes, //sh o lh
+  output logic              four_byte, //sw o lw
   output logic          write_register // Guardar en registros add, addi, jal, jalr, etc
 );
   //Tipo de instrucciones segun el opcode
@@ -21,7 +24,9 @@ module control_signal #(parameter WIDTH = 32)(
   parameter TipoUJ_jal       = 7'b110_1111; //Jump and link
   
   logic [6:0] opcode;
+  logic [2:0] funct3;
   assign opcode = instruction[6:0];
+  assign funct3 = instruction[14:12];
   
   always_comb begin
     case(opcode)
@@ -33,6 +38,9 @@ module control_signal #(parameter WIDTH = 32)(
         write_mem              = 0;
         read_mem               = 0;
         write_register         = 1;
+        one_byte               = 0;
+        two_bytes               = 0;
+        four_byte              = 0;
       end
       TipoI_Load: begin //Usar immediato, leer memoria, extraer de memoria, guardar registro
         mux_pc_signal          = 0;
@@ -42,6 +50,21 @@ module control_signal #(parameter WIDTH = 32)(
         write_mem              = 0;
         read_mem               = 1;
         write_register         = 1;
+        if(funct3 == 3'b000) begin //lb
+          one_byte               = 1;
+          two_bytes               = 0;
+          four_byte              = 0;
+        end
+        else if(funct3 == 3'b001) begin //lh
+          one_byte               = 0;
+          two_bytes               = 1;
+          four_byte              = 0;
+        end
+        else if(funct3 == 3'b010) begin //lw
+          one_byte               = 0;
+          two_bytes               = 0;
+          four_byte              = 1;
+        end
       end
       TipoI_aritmetico: begin //Usar immediato, guardar registro
         mux_pc_signal          = 0;
@@ -51,6 +74,9 @@ module control_signal #(parameter WIDTH = 32)(
         write_mem              = 0;
         read_mem               = 0;
         write_register         = 1;
+        one_byte               = 0;
+        two_bytes               = 0;
+        four_byte              = 0;
       end
       TipoI_jalr: begin // Usar immediato, salto de PC, guardar en registros, salto sin referencia
         mux_pc_signal          = 1;
@@ -60,6 +86,9 @@ module control_signal #(parameter WIDTH = 32)(
         write_mem              = 0;
         read_mem               = 0;
         write_register         = 1;
+        one_byte               = 0;
+        two_bytes               = 0;
+        four_byte              = 0;
       end
       TipoS: begin // Usar immediato, guardar memoria
         mux_pc_signal          = 0;
@@ -69,6 +98,21 @@ module control_signal #(parameter WIDTH = 32)(
         write_mem              = 1;
         read_mem               = 0;
         write_register         = 0;
+        if(funct3 == 3'b000) begin //lb
+          one_byte               = 1;
+          two_bytes               = 0;
+          four_byte              = 0;
+        end
+        else if(funct3 == 3'b001) begin //lh
+          one_byte               = 0;
+          two_bytes               = 1;
+          four_byte              = 0;
+        end
+        else if(funct3 == 3'b010) begin //lw
+          one_byte               = 0;
+          two_bytes               = 0;
+          four_byte              = 1;
+        end
       end
       TipoSB: begin //Salto de PC quizas si quizas no
         mux_imm_signal               = 0;
@@ -77,6 +121,9 @@ module control_signal #(parameter WIDTH = 32)(
         write_mem                    = 0;
         read_mem                     = 0;
         write_register               = 0;
+        one_byte                     = 0;
+        two_bytes                     = 0;
+        four_byte                    = 0;
         if(comparison) mux_pc_signal = 1;
         else mux_pc_signal           = 0;
       end
@@ -88,6 +135,9 @@ module control_signal #(parameter WIDTH = 32)(
         write_mem              = 0;
         read_mem               = 0;
         write_register         = 1;
+        one_byte               = 0;
+        two_bytes               = 0;
+        four_byte              = 0;
       end
       TipoUJ_jal: begin //Salto PC, Salto con referencia de PC, guardar regustro
         mux_pc_signal          = 1;
@@ -97,6 +147,9 @@ module control_signal #(parameter WIDTH = 32)(
         write_mem              = 0;
         read_mem               = 0;
         write_register         = 1;
+        one_byte               = 0;
+        two_bytes               = 0;
+        four_byte              = 0;
       end
     endcase
   end

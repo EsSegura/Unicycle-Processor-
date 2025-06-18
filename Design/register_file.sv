@@ -1,4 +1,4 @@
-module reg_file #(parameter WIDHT = 32, parameter DEPTH = 5)(
+module reg_file #(parameter WIDTH = 32, parameter DEPTH = 5)(
 
     input logic clk,
     input logic rst,
@@ -14,15 +14,16 @@ module reg_file #(parameter WIDHT = 32, parameter DEPTH = 5)(
 
 );
 
-    logic [WIDTH-1:0] registers [DEPTH],
-    logic [WIDTH-1:0] reg_zero,
+    logic [WIDTH-1:0] registers [DEPTH];
+    logic [WIDTH-1:0] reg_zero;
+    logic [DEPTH-1:0] i;
 
-    assign reg_zero = 0,
+    assign reg_zero = 0;
 
     always_ff @( posedge clk ) begin 
         if (rst) begin 
             for (int i=1; i<DEPTH; i++)begin 
-                registers[i] <= 0;
+                registers[i] <= '0;
             end
         end
         else begin 

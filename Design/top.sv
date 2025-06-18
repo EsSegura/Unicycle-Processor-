@@ -8,100 +8,87 @@
 `include "register.sv"
 `include "inst_memory.sv"
 
-module top #(parameter WIDTH=32, parameter DEPTH=16) (
+module top #(parameter WIDTH=32, parameter DEPTH=20) (
     input  logic clk,
     input  logic rst,
     output logic [WIDTH-1:0] pc_out
 );
 
     // Signals
-    logic [WIDTH-1:0] pc;
-    logic [WIDTH-1:0] pc_plus_4;
-    logic [WIDTH-1:0] pc_plus_imm;
-    logic [WIDTH-1:0] instr;
-    logic [WIDTH-1:0] imm_data;
-    logic [WIDTH-1:0] alu_result;
-    logic [WIDTH-1:0] data_mem_out;
-    logic [WIDTH-1:0] reg_data_out;
-    logic [WIDTH-1:0] inst_out
-    wire [WIDTH-1:0] rs1_data;
-    wire [WIDTH-1:0] rs2_data;
-    wire [WIDTH-1:0] rs3_data; 
-    wire [WIDTH-1:0] write_data;
+    wire [WIDTH-1:0] pc_actual;
+    wire [WIDTH-1:0] next_pc;
+    wire [WIDTH-1:0] pc_plus_4;
+    wire [WIDTH-1:0] pc_plus_imm;
+    wire [WIDTH-1:0] instr;
+    wire [WIDTH-1:0] imm_data;
+    wire [WIDTH-1:0] alu_result;
+    wire [WIDTH-1:0] data_mem_out;
+    wire [WIDTH-1:0] reg_data_out;
+    wire [WIDTH-1:0] inst_out;
+    wire  [WIDTH-1:0] rs1_data;
+    wire  [WIDTH-1:0] rs2_data;
+    wire  [WIDTH-1:0] rs2_data_to_alu;
+    wire  [WIDTH-1:0] rs3_data; 
+    wire  [WIDTH-1:0] write_data;
 
     // Control signals
-    logic mux_pc_signal;
-    logic mux_imm_signal;
-    logic mux_writedata_register;
-    logic mux_jalr;
-    logic write_mem;
-    logic read_mem;
-    logic write_register;
-    logic zero:
-    logic branch_taken;
-    logic one_byte; two_byte; four_bytes;
+    wire mux_pc_signal;
+    wire mux_imm_signal;
+    wire mux_writedata_register;
+    wire mux_jalr_signal;
+    wire write_mem;
+    wire read_mem;
+    wire write_register_signal;
+    wire zero;
+    wire branch_taken;
+    wire one_byte; 
+    wire two_bytes; 
+    wire four_bytes;
+
+    assign pc_out = pc_actual;
 
     // Instantiate modules
-    inst_mem #(WIDTH, DEPTH) inst_memory (
+    //Instruction Fetch
+    register #(WIDTH) pc_register (
         .clk(clk),
         .rst(rst),
-        .addr(pc_out),
-        .data_in(0), // No need to write to instruction memory
-        .wr(1'b0), // No write operation        
-        .rd(1'b1),
-        .data_out(instr)
+        .write(1'b1), // Always write to PC
+        .data_in(next_pc),
+        .data_out(pc_actual)
     );
 
-    imm_gen #(WIDTH) imm_generator (
-        .instr(instr),
-        .data_out(imm_data)
+    inst_mem inst_memory (
+    .clk(clk),
+    .rst(rst),
+    .addr(pc_actual[31:2]),  // <<-- Divide la dirección entre 4 (word-aligned)
+    .data_in(32'd0),
+    .wr(1'b0),
+    .rd(1'b1),
+    .data_out(instr)
+);
+
+    mux_2_1 mux_pc (
+        .A(pc_plus_4), // Default to next instruction
+        .B(inst_out), // Jump targe //inst_out
+        .sel(mux_pc_signal),
+        .out(next_pc)
     );
 
-    alu #(WIDTH) alu_unit (
-        .rs1(rs1_data),
-        .rs2(rs2_data),
-        .pc(pc),
-        .func3(instr[14:12]),
-        .func7(instr[31:25]),
-        .opcode(instr[6:0]),
-        .alu_result(alu_result),
-        .pc_plus_4(pc_plus_4),
-        .jump_target(rs3_data),
-        .zero(zero),
-        .branch_taken(branch_taken)
-    );
-//revisar entradas
-    data_memory #(WIDTH, DEPTH) data_memory_unit (
-        .clk(clk),
-        .rst(rst),
-        .data_in(rs2_data),
-        .one_byte(one_byte),
-        .two_byte(two_byte),
-        .four_bytes(four_bytes),
-        .addr(alu_result[DEPTH-1:2]),
-        .wr(write_mem),
-        .rd(read_mem),
-        .data_out(data_mem_out)
+    //Despues del pc
+    adder #(WIDTH) adder_unit_1 (
+        .A(pc_actual),
+        .B(32'd4),
+        .result(pc_plus_4)
     );
 
-    control_signal control_unit (
-        .instruction(instr[6:0]),
-        .comparison(branch_taken), // Example comparison signal
-        .mux_pc_signal(mux_pc_signal),
-        .mux_imm_signal(mux_imm_signal),
-        .mux_writedata_register(mux_writedata_register),
-        .mux_jalr(mux_jalr),
-        .write_mem(write_mem),
-        .read_mem(read_mem),
-        .write_register(write_register)
-    );
 
-    register_file #(WIDTH) reg_file (
+    //Instruction Decode
+    reg_file reg_file (
         .clk(clk),
         .rst(rst),
         .write_data(write_data),
         .write_register(instr[11:7]), // rd field
-        .write(write_register),
+        .write(write_register_signal),
         .read_register_1(instr[19:15]),
         .read_register_2(instr[24:20]),
         .read(1'b1),    
@@ -109,53 +96,81 @@ module top #(parameter WIDTH=32, parameter DEPTH=16) (
         .read_data_2(rs2_data)  
     );
 
-    register #(WIDTH) pc_register (
-        .clk(clk),
-        .rst(rst),
-        .write(1'b1), // Always write to PC
-        .data_in(mux_pc_signal),
-        .data_out(pc)
+    imm_gen #(WIDTH) imm_generator (
+        .instr(instr),
+        .data_out(imm_data)
     );
 
-    mux_2_1 #(WIDTH) mux_jalr (
-        .A(pc_plus_imm), // Default to next instruction
-        .B(alu_result), // Jump targe
-        .sel(mux_jalr),
-        .out(inst_out) 
-    );
-
-    mux_2_1 #(WIDTH) mux_pc (
-        .A(pc_plus_4), // Default to next instruction
-        .B(inst_out), // Jump targe
-        .sel(mux_pc_signal),
-        .out(mux_pc)
-    );
-//este 
-    mux_2_1 #(WIDTH) mux_prealu(
+    //Execution
+    mux_2_1 mux_prealu(
         .A(rs2_data), // Default to next instruction
         .B(imm_data), // Jump targe
         .sel(mux_imm_signal),
-        .out(rs2_data)//entrada alu
+        .out(rs2_data_to_alu)//entrada alu
     );
-
-    mux_2_1 #(WIDTH) mux_postalu(
-        .A(read_data), // Default to next instruction
-        .B(alu_result), // Jump targe
-        .sel(mux_writedata_register),
-        .out(write_data)
-    );
-    //Despues del pc
-    adder #(WIDTH) adder_unit_1 (
-        .A(32'd4),
-        .B(pc),
-        .sum(pc_plus_4)
+    mux_2_1 mux_jalr (
+        .A(pc_plus_imm), // Default to next instruction
+        .B(rs3_data), // Jump target
+        .sel(mux_jalr_signal),
+        .out(inst_out) 
     );
     //Despues del pc y adder
     adder #(WIDTH) adder_unit_2 (
-        .A(pc_out),
+        .A(pc_actual),
         .B(imm_data),
-        .sum(pc_plus_imm) // Jump target
+        .result(pc_plus_imm) // Jump target
+    );
+    alu #(WIDTH) alu_unit (
+        .rs1(rs1_data),
+        .rs2(rs2_data_to_alu),
+        .pc(pc_actual),
+        .func3(instr[14:12]),
+        .func7(instr[31:25]),
+        .opcode(instr[6:0]),
+        .alu_result(alu_result),
+        .jump_target(rs3_data),
+        .zero(zero),
+        .branch_taken(branch_taken)
+    );
+
+    //Memory
+    data_mem  data_memory_unit (
+        .clk(clk),
+        .rst(rst),
+        .data_in(rs2_data),
+        .one_byte(one_byte),
+        .two_bytes(two_byte),
+        .four_bytes(four_bytes),
+        .addr(alu_result[DEPTH-1:0]),
+        .wr(write_mem),
+        .rd(read_mem),
+        .data_out(data_mem_out)
+    );
+
+    //Write back
+    mux_2_1 mux_postalu(
+        .A(alu_result), // Default to next instruction
+        .B(data_mem_out), // Jump targe
+        .sel(mux_writedata_register),
+        .out(write_data)
     );
     
+    //Control
+    control_signal control_unit (
+        .instruction(instr),
+        .comparison(branch_taken), // Example comparison signal
+        .mux_pc_signal(mux_pc_signal),
+        .mux_imm_signal(mux_imm_signal),
+        .mux_writedata_register(mux_writedata_register),
+        .mux_jalr(mux_jalr_signal),
+        .write_mem(write_mem),
+        .read_mem(read_mem),
+        .one_byte(one_byte),
+        .two_bytes(two_bytes),
+        .four_byte(four_bytes),
+        .write_register(write_register_signal)
+    );
+
 endmodule
+
     

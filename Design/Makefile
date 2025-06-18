@@ -5,9 +5,9 @@ VLOG = iverilog
 VVP  = vvp
 
 # Files
-SRC = imm_gen.sv
-TB  = imm_gen_tb.sv
-OUT = imm_gen_tb
+SRC = top.sv
+TB  = top_tb.sv
+OUT = top_tb
 
 # Default target
 all: run

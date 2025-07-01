@@ -1,5 +1,5 @@
 $date
-	Wed Jun 18 17:55:22 2025
+	Sat Jun 21 11:44:41 2025
 $end
 $version
 	Icarus Verilog
@@ -199,8 +199,20 @@ $var parameter 32 A" DEPTH $end
 $var parameter 32 B" WIDTH $end
 $var reg 32 C" read_data_1 [31:0] $end
 $var reg 32 D" read_data_2 [31:0] $end
-$scope begin $ivl_for_loop1 $end
-$var integer 32 E" i [31:0] $end
+$scope begin genblk1[0] $end
+$var parameter 2 E" i $end
+$upscope $end
+$scope begin genblk1[1] $end
+$var parameter 2 F" i $end
+$upscope $end
+$scope begin genblk1[2] $end
+$var parameter 3 G" i $end
+$upscope $end
+$scope begin genblk1[3] $end
+$var parameter 3 H" i $end
+$upscope $end
+$scope begin genblk1[4] $end
+$var parameter 4 I" i $end
 $upscope $end
 $upscope $end
 $upscope $end
@@ -208,6 +220,11 @@ $upscope $end
 $enddefinitions $end
 $comment Show the parameter values. $end
 $dumpall
+b100 I"
+b11 H"
+b10 G"
+b1 F"
+b0 E"
 b100000 B"
 b101 A"
 b100000 9"
@@ -250,7 +267,6 @@ b10100 "
 $end
 #0
 $dumpvars
-b0 E"
 bx D"
 bx C"
 bx @"
